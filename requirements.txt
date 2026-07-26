@@ -1,0 +1,2 @@
+pysolark
+influxdb-client
