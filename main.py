@@ -28,7 +28,7 @@ try:
     config = Config("config.toml", "solark_influx").load()
     main_conf = config["main"]
     logging.getLogger().setLevel(logging.getLevelName(main_conf["log_verbosity"]))
-    sleep_time = main_conf["loop_minutes"] * 60
+    sleep_time_seconds = main_conf["loop_minutes"] * 60
     logging.debug(f"CONFIG: {config}")
 
     solarkConnector = SolarkConnector(config["solark"])
@@ -54,10 +54,10 @@ try:
         except Exception as e:
             logging.exception(e)
 
-        if not sleep_time:
+        if not sleep_time_seconds:
             exit(0)
 
-        time.sleep(sleep_time * 60)
+        time.sleep(sleep_time_seconds)
 
 except Exception as e:
     logging.exception(e)
