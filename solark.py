@@ -1,8 +1,10 @@
 from zoneinfo import ZoneInfo
 
-from pysolark import SolArkClient, SolArkSeriesCollection
+from pysolark import SolArkClient, SolArkSeriesCollection, SolArkTokenExpiredError
 import logging
 from datetime import datetime, date
+
+from reactivex import catch
 
 class SolarkConnector:
     def __init__(self, solark_conf: dict) -> None:
@@ -18,17 +20,25 @@ class SolarkConnector:
         self.client.login()
         self.plant = self.client.get_plant(plant_id)
 
-    def __get_data(self, day: str, measurement: str) -> SolArkSeriesCollection:
-        if measurement == "plant_energy":
-            return self.client.get_plant_energy(self.plant.plant_id, period="day", date=day)
-        if measurement == "plant_power":
-            return self.client.get_plant_power(self.plant.plant_id, period="day", date=day)
+    def __get_data(self, day: str, measurement: str, retry: bool) -> SolArkSeriesCollection:
+        try:
+            if measurement == "plant_energy":
+                return self.client.get_plant_energy(self.plant.plant_id, period="day", date=day)
+            if measurement == "plant_power":
+                return self.client.get_plant_power(self.plant.plant_id, period="day", date=day)
+        except SolArkTokenExpiredError as e:
+            if retry:
+                logging.warning(f"Sol-Ark token expired, re-logging in and retrying...")
+                self.client.login()
+                return self.__get_data(day, measurement, False)
+            
+            raise Exception(f"Sol-Ark token expired and retry failed: {e}")
         raise Exception(f"Invalid measurement {measurement}. Must be either 'plant_energy' or 'plant_power'.")
 
     def get_data(self, day: date, measurement: str) -> list[dict]:
         try:
             day_str = day.strftime("%Y-%m-%d")
-            series_collection: SolArkSeriesCollection = self.__get_data(day_str, measurement)
+            series_collection: SolArkSeriesCollection = self.__get_data(day_str, measurement, True)
             if not series_collection:
                 logging.error(f"No data returned from Sol-Ark for {day_str} using {measurement}.")
                 return []
