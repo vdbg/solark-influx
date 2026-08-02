@@ -6,6 +6,7 @@ from datetime import datetime, date
 
 from reactivex import catch
 
+
 class SolarkConnector:
     def __init__(self, solark_conf: dict) -> None:
         self.username: str = solark_conf["username"]
@@ -19,6 +20,8 @@ class SolarkConnector:
         self.client = SolArkClient(username=self.username, password=self.password)
         self.client.login()
         self.plant = self.client.get_plant(plant_id)
+        logging.info(f"Initialized SolarkConnector for plant {self.plant.name} (ID: {self.plant.plant_id})")
+
 
     def __get_data(self, day: str, measurement: str, retry: bool) -> SolArkSeriesCollection:
         try:
@@ -35,9 +38,19 @@ class SolarkConnector:
             raise Exception(f"Sol-Ark token expired and retry failed: {e}")
         raise Exception(f"Invalid measurement {measurement}. Must be either 'plant_energy' or 'plant_power'.")
 
-    def get_data(self, day: date, measurement: str) -> list[dict]:
+    def get_data(self, time_utc: datetime, measurement: str) -> list[dict]:
         try:
-            day_str = day.strftime("%Y-%m-%d")
+            plant_timezone = self.plant.timezone
+            # The Sol-Ark API takes the day to query in the local timezone of the plant, so we need to convert the UTC date to the plant's local timezone before querying the API.
+            if plant_timezone and plant_timezone.code:
+                day_local = time_utc.replace(tzinfo=ZoneInfo("UTC")).astimezone(ZoneInfo(plant_timezone.code)).date()
+            else:
+                logging.warning(f"Plant timezone not set for plant {self.plant.plant_id}. Assuming UTC.")
+                day_local = time_utc.date()
+            logging.debug(f"Converted UTC datetime {time_utc} to local date {day_local}")
+            day_str = day_local.strftime("%Y-%m-%d")
+
+            logging.debug(f"Processing data for {day_str}, measurement: {measurement}")
             series_collection: SolArkSeriesCollection = self.__get_data(day_str, measurement, True)
             if not series_collection:
                 logging.error(f"No data returned from Sol-Ark for {day_str} using {measurement}.")
@@ -49,9 +62,14 @@ class SolarkConnector:
             # with the date to get a full timestamp for InfluxDB
             # 2. the Sol-Ark API returns local time, while InfluxDB expects UTC time, so we need to convert the local time to UTC. 
             # This is done by using the date and time of day to create a datetime object, and then converting that to UTC.
-            self.plant.timezone
+
             # dict of time, and all fields and values for that time. Because we want to import all fields for a given time at once
             results = {}
+            record_count = 0
+            if not series_collection.series:
+                logging.warning(f"No series data found in collection for {day_str}")
+                return []
+                
             for s in series_collection.series:
                 if not s.label:
                     logging.warning(f"Series label is missing for series with unit {s.unit}!")
@@ -61,10 +79,11 @@ class SolarkConnector:
                     if not result:
                         # r.time is time of day, e.g. "00:15" for quarter midnight
                         result_datetime = datetime.fromisoformat(f"{day_str} {r.time}")
-                        if self.plant.timezone and self.plant.timezone.code:
-                            result_datetime = result_datetime.replace(tzinfo=ZoneInfo(self.plant.timezone.code))
+                        logging.debug(f"Converting local time {r.time} to UTC for {day_str}")
+                        if plant_timezone and plant_timezone.code:
+                            result_datetime = result_datetime.replace(tzinfo=ZoneInfo(plant_timezone.code))
                             result_datetime = result_datetime.astimezone(ZoneInfo("UTC"))
-
+                        
                         result = {
                             "measurement": measurement,
                             "tags": {"plant_id": self.plant.plant_id, "plant_name": self.plant.name},
@@ -74,9 +93,12 @@ class SolarkConnector:
                         results[r.time] = result
 
                     result["fields"][s.label] = r.value
+                    record_count += 1
 
+            logging.debug(f"Processed {record_count} records for {day_str}")
             return list(results.values())
         except Exception as e:
+            logging.error(f"Error processing data for {day_utc}: {e}")
             raise Exception(f"get_{measurement} failed: {e}")    
 
 

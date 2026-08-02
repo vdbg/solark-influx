@@ -42,15 +42,12 @@ try:
                 solarkConnector.max_days, to_time_utc, measurement
             )
 
-            start_date = from_time_utc.date()
-            end_date = to_time_utc.date()
-
-            while start_date <= end_date:
-                logging.info(f"Querying Sol-Ark for {start_date}...")
-                ret = solarkConnector.get_data(start_date, measurement)
+            while from_time_utc <= to_time_utc:
+                logging.info(f"Querying Sol-Ark for {from_time_utc}...")
+                ret = solarkConnector.get_data(from_time_utc, measurement)
                 if ret:
                     influxConnector.add_samples(ret)
-                start_date += timedelta(days=1)
+                from_time_utc += timedelta(days=1)
         except Exception as e:
             logging.exception(e)
 
