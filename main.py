@@ -14,7 +14,7 @@ from influx import InfluxConnector
 from solark import SolarkConnector
 from datetime import datetime
 
-logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
+logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 
 SUPPORTED_PYTHON_MAJOR = 3
 SUPPORTED_PYTHON_MINOR = 11
