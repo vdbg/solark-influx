@@ -42,7 +42,8 @@ try:
                 solarkConnector.max_days, to_time_utc, measurement
             )
 
-            while from_time_utc <= to_time_utc:
+            # add 1 day to the current time to ensure we get the last record if it was recorded today
+            while from_time_utc <= to_time_utc+timedelta(days=1):
                 logging.info(f"Querying Sol-Ark for {from_time_utc}...")
                 ret = solarkConnector.get_data(from_time_utc, measurement)
                 if ret:
