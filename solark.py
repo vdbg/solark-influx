@@ -1,10 +1,8 @@
+import logging
+from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from pysolark import SolArkClient, SolArkSeriesCollection, SolArkTokenExpiredError
-import logging
-from datetime import datetime, date
-
-from reactivex import catch
 
 
 class SolarkConnector:
@@ -98,7 +96,7 @@ class SolarkConnector:
             logging.debug(f"Processed {record_count} records for {day_str}")
             return list(results.values())
         except Exception as e:
-            logging.error(f"Error processing data for {day_utc}: {e}")
+            logging.error(f"Error processing data for {time_utc}: {e}")
             raise Exception(f"get_{measurement} failed: {e}")    
 
 

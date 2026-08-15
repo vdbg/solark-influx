@@ -43,9 +43,8 @@ class InfluxConnector:
         if self.no_op:
             logging.warning("No-op mode, records not imported.")
             return
-        with self.__get_client() as client:
-            with client.write_api() as write_api:
-                write_api.write(bucket=self.bucket, record=records)
+        with self.__get_client() as client, client.write_api() as write_api:
+            write_api.write(bucket=self.bucket, record=records)
 
 
     def __run_query(self, query: str) -> TableList:

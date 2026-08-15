@@ -1,18 +1,14 @@
 
 
-import asyncio
-from datetime import datetime, timedelta, timezone
 import logging
 import platform
 import sys
 import time
+from datetime import datetime, timedelta, timezone
 
-
-import logging
 from config import Config
 from influx import InfluxConnector
 from solark import SolarkConnector
-from datetime import datetime
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 
@@ -53,10 +49,10 @@ try:
             logging.exception(e)
 
         if not sleep_time_seconds:
-            exit(0)
+            sys.exit(0)
 
         time.sleep(sleep_time_seconds)
 
 except Exception as e:
     logging.exception(e)
-    exit(1)
+    sys.exit(1)

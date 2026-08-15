@@ -4,7 +4,9 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
+
 import tomllib
+
 
 class Config:
     def __init__(self, file: str, prefix: str) -> None:
