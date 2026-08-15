@@ -1,0 +1,26 @@
+# This template file should be left untouched
+# The app will in order:
+# 1. Read this file (template.config.toml)
+# 2. Overwrite the settings with those in the file config.toml (if it exists)
+# 3. Overwrite the settings with environment variables called "SOLARK_INFLUX_<SECTION>_<KEY>" (with section and key uppercase), if these exist.
+#    For example, set the env var SOLARK_INFLUX_MAIN_LOG_VERBOSITY to DEBUG to overwrite the log verbosity
+
+[solark]
+username = "user@email.com"    # Sol-Ark login
+password = "strong password"   # Sol-Ark password
+plant_id = 123456              # Sol-Ark plant ID
+# Max number of days of historical data to query. 
+max_days = 365
+
+[influx]
+url = "http://localhost:8086"  # InfluxDB v2 server
+bucket = "nrj"                 # Name of bucket
+org = "your org in influx"     # Org of the bucket
+token = "super-secret-token"   # Token with read & write permission
+no_op = false                  # Set to true for testing (don't import to InfluxDB)
+measurement = "plant_energy"   # Either "plant_energy" or "plant_power". Only "plant_energy" worked for my system.
+
+
+[main]
+log_verbosity = "INFO" # FATAL, ERROR, WARNING, INFO, DEBUG
+loop_minutes  = 30     # 0 to only import once then exit, otherwise loop every X minutes
