@@ -1,5 +1,3 @@
-
-
 import logging
 import platform
 import sys
@@ -10,7 +8,9 @@ from config import Config
 from influx import InfluxConnector
 from solark import SolarkConnector
 
-logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
+)
 
 SUPPORTED_PYTHON_MAJOR = 3
 SUPPORTED_PYTHON_MINOR = 11
@@ -39,7 +39,7 @@ try:
             )
 
             # add 1 day to the current time to ensure we get the last record if it was recorded today
-            while from_time_utc <= to_time_utc+timedelta(days=1):
+            while from_time_utc <= to_time_utc + timedelta(days=1):
                 logging.info(f"Querying Sol-Ark for {from_time_utc}...")
                 ret = solarkConnector.get_data(from_time_utc, measurement)
                 if ret:
